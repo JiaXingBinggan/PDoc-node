@@ -57,6 +57,7 @@ router.route('/login')
 					}
 					req.session.loginCaptcha = null;
 					req.session.uid = obj._id;
+					req.session.name = obj.name;
 					restmsg.successMsg();
 					restmsg.setResult(req.session)
 	        		res.send(restmsg);

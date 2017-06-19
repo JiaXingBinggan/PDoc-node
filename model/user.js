@@ -5,11 +5,9 @@
 var mongoose = require("../db/db");
 
 var userSchema = mongoose.Schema({
-    'accountName': String, // 用户账户名称
+    'name': String, // 用户账户名称
     'password': String, // 用户账户密码
-    'email': String, // 用户邮箱
-    'emailCaptcha': String, // 用户注册邮箱的验证码
-    'emailCapExpires': String, // 邮箱验证码过期时间
+    'email': String // 用户邮箱
 },{
 	versionKey:false,
 	'timestamps': {

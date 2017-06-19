@@ -32,9 +32,10 @@ router.route('/')
         var restmsg = new RestMsg();
         var email = req.body.email;
         var password = req.body.pass;
+        var name = req.body.name;
         var newUser = {
             'email' : email,
-            'password' : password
+            'name': name
         }
 
         encrypt.sha1Hash(password, function(err, obj) {
@@ -46,7 +47,7 @@ router.route('/')
                     return;
                 }
                 restmsg.successMsg();
-                restmsg.setResult(obj);
+                restmsg.setResult(obj._id);
                 res.send(restmsg);
             })
         });
@@ -99,7 +100,7 @@ router.route('/register/:email')
 router.route('/:id')
     .get(function (req, res, next) {
         var restmsg = new RestMsg();
-        var useremail = req.params.email;
+        var userid = req.params.id;
 
         User.findById(userid, function (err, obj) {
             if (err) {
@@ -116,11 +117,15 @@ router.route('/:id')
         var restmsg = new RestMsg();
         var userid = req.params.id;
         var updateEmail = req.body.email;
+        var updateName = req.body.name;
+        var updateUser = {};
 
-        var updateUser = {
-            'email': updateEmail
+        if (updateEmail) {
+            updateUser.email = updateEmail
         }
-
+        if (updateName) {
+            updateUser.name = updateName
+        }
         User.update({_id: userid}, updateUser, function (err, obj) {
             if (err) {
                 restmsg.errorMsg(err);
@@ -148,5 +153,25 @@ router.route('/:id')
         })
     })
 
+router.route('/password/:id')
+    .put(function(req, res, next) {
+        var restmsg = new RestMsg();
+        var userid = req.params.id;
+        var updatePassword = req.body.password;
+        var user = {};
+        encrypt.sha1Hash(updatePassword, function(err, obj) {
+            user.password = obj;
+            User.update({_id: userid}, user, function(err, ret) {
+                if (err) {
+                    restmsg.errorMsg(err);
+                    res.send(restmsg);
+                    return;
+                }
+                restmsg.successMsg();
+                restmsg.setResult(obj);
+                res.send(ret);
+            })
+        })
+    })
 module.exports = router;
 
