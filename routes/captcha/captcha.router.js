@@ -123,7 +123,7 @@ router.route('/imgCaptcha')
             res.send(restmsg);
             return;
         } else {
-            req.session.loginCaptcha = imgCaptchaCode;
+            req.session.imgCaptcha = imgCaptchaCode;
             restmsg.successMsg();
             restmsg.setResult(imgCaptchaCode);
             res.send(restmsg);

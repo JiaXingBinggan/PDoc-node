@@ -4,6 +4,7 @@
 var express = require('express');
 var router = express.Router();
 var encrypt = require('../../middlewares/encrypt');
+var common = require('../../middlewares/common');
 var userModel = require('../../model/user'); // 引入user的model
 var RestMsg = require('../../middlewares/RestMsg');
 var Page = require('../../middlewares/page');
@@ -158,7 +159,16 @@ router.route('/password/:id')
         var restmsg = new RestMsg();
         var userid = req.params.id;
         var updatePassword = req.body.password;
+        var imgCaptcha = req.body.imgCaptcha;
         var user = {};
+        console.log(req.session.imgCaptcha)
+        var captchaEqStatus = common.strCompare(imgCaptcha, req.session.imgCaptcha); // 前端验证码验证结果
+        console.log(captchaEqStatus)
+        if (captchaEqStatus == false) {
+            restmsg.errorMsg('图片验证码输入错误');
+            res.send(restmsg);
+            return;
+        }
         encrypt.sha1Hash(updatePassword, function(err, obj) {
             user.password = obj;
             User.update({_id: userid}, user, function(err, ret) {
