@@ -32,11 +32,11 @@ router.route('/login')
             res.send(restmsg);
             return;
         }
-        if (captcha == '') {
-        	restmsg.errorMsg('请输入验证码');
-        	res.send(restmsg);
-        	return;
-        }
+        // if (captcha == '') {
+        // 	restmsg.errorMsg('请输入验证码');
+        // 	res.send(restmsg);
+        // 	return;
+        // }
 		User.findOne(query, function(err, obj) {
 			if (err) {
 				restmsg.errorMsg(err);
@@ -48,13 +48,13 @@ router.route('/login')
 				var hashPass = obj.password; // 数据库密码
 				var hashSalt = hashPass.split('.')[1]; // 对应用户盐值
 				var hash = encrypt.sha1HashCompare(password, hashSalt); // 用于比较的hash值
-				var captchaEqStatus = common.strCompare(captcha, req.session.loginCaptcha); // 前端验证码验证结果
+				// var captchaEqStatus = common.strCompare(captcha, req.session.loginCaptcha); // 前端验证码验证结果
 				if (hashPass === hash) {
-					if (captchaEqStatus == false) {
-						restmsg.errorMsg('您的验证码输入错误!');
-						res.send(restmsg);
-						return;
-					}
+					// if (captchaEqStatus == false) {
+					// 	restmsg.errorMsg('您的验证码输入错误!');
+					// 	res.send(restmsg);
+					// 	return;
+					// }
 					req.session.loginCaptcha = null;
 					req.session.uid = obj._id;
 					req.session.name = obj.name;
