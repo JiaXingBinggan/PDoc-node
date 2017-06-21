@@ -20,16 +20,12 @@ _privateFun.prsBO2VO2 = function(obj){
     var result = obj.toObject({ transform: function(doc, ret, options){
         return {
             id:ret._id,
-            proposer: ret.proposer,
-            proposeTime: ret.proposeTime,
-            description: ret.description,
-            level: ret.level,
-            handler: ret.handler,
-            startTime: ret.startTime,
-            endTime: ret.endTime,
-            diagnosis: ret.diagnosis,
-            prosessStep: ret.prosessStep,
-            status: ret.status
+            name: ret.name,
+            email: ret.email,
+            tel: ret.tel,
+            sex: ret.sex,
+            birthdate: ret.birthdate,
+            desc: ret.desc
         }
     } });
     return result;
@@ -133,24 +129,13 @@ router.route('/:id')
                 res.send(restmsg);
                 return;
             }
-            var ret = {};
-            for (var key in obj) {
-                if (key != '_id') {
-                    ret[key] = obj[key];
-                }
+            var ret = obj
+            if(obj){
+                ret = _privateFun.prsBO2VO2(ret);
             }
-            if(page){ // 查询出page后封装返回
-                var objs = page.data;
-                if(objs!==null&&objs.length>0){
-                    objs = objs.map(_privateFun.prsBO2VO2);
-                    page.setData(objs);
-                }
-            }
-            ret.date = moment(obj.birthdate).format('YYYY-MM-DD HH:mm:ss');
-            console.log(ret.date)
-            console.log(ret)
+            ret.birthdate = moment(obj.birthdate).format('YYYY-MM-DD');
             restmsg.successMsg();
-            restmsg.setResult(ret.birthdate);
+            restmsg.setResult(ret);
             res.send(restmsg);
         })
     })
@@ -183,6 +168,7 @@ router.route('/:id')
         if (updateDesc) {
             updateUser.desc = updateDesc
         }
+        console.log(updateUser)
         User.update({_id: userid}, updateUser, function (err, obj) {
             if (err) {
                 restmsg.errorMsg(err);

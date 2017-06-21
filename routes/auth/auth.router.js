@@ -10,6 +10,20 @@ var userModel = require('../../model/user');
 var modelGenerator = require('../../model/common/modelGenerator');
 var User = modelGenerator(userModel, '_id');
 var RestMsg = require('../../middlewares/restmsg');
+var _privateFun = router.prototype;
+
+//BO 转 VO 继承BO的字段方法2，并且进行相关字段的扩展和删除
+_privateFun.prsBO2VO2 = function(obj){
+    var result = obj.toObject({ transform: function(doc, ret, options){
+        return {
+            id:ret._id,
+            name: ret.name,
+            email: ret.email
+        }
+    } });
+    return result;
+}
+
 
 // 登录相关
 router.route('/login')
@@ -58,8 +72,13 @@ router.route('/login')
 					req.session.loginCaptcha = null;
 					req.session.uid = obj._id;
 					req.session.name = obj.name;
+
+					var ret = obj
+		            if(obj){
+		                ret = _privateFun.prsBO2VO2(ret);
+		            }
 					restmsg.successMsg();
-					restmsg.setResult(req.session)
+					restmsg.setResult(ret)
 	        		res.send(restmsg);
 				} else {
 					restmsg.errorMsg('您的账户名或密码错误!');
