@@ -3,6 +3,7 @@
  */
 var express = require('express');
 var router = express.Router();
+var moment = require('moment');
 var encrypt = require('../../middlewares/encrypt');
 var common = require('../../middlewares/common');
 var userModel = require('../../model/user'); // 引入user的model
@@ -12,6 +13,27 @@ var randomWord = require('../../middlewares/randomword');
 var sendMailer = require('../../middlewares/sendmail');
 var modelGenerator = require('../../model/common/modelGenerator'); // 引入model公共方法对象
 var User = modelGenerator(userModel, '_id');
+var _privateFun = router.prototype;
+
+//BO 转 VO 继承BO的字段方法2，并且进行相关字段的扩展和删除
+_privateFun.prsBO2VO2 = function(obj){
+    var result = obj.toObject({ transform: function(doc, ret, options){
+        return {
+            id:ret._id,
+            proposer: ret.proposer,
+            proposeTime: ret.proposeTime,
+            description: ret.description,
+            level: ret.level,
+            handler: ret.handler,
+            startTime: ret.startTime,
+            endTime: ret.endTime,
+            diagnosis: ret.diagnosis,
+            prosessStep: ret.prosessStep,
+            status: ret.status
+        }
+    } });
+    return result;
+}
 
 router.route('/')
     .get(function (req, res, next) {
@@ -102,30 +124,64 @@ router.route('/:id')
     .get(function (req, res, next) {
         var restmsg = new RestMsg();
         var userid = req.params.id;
-
-        User.findById(userid, function (err, obj) {
+        var query = {
+            _id: userid
+        }
+        User.findOne(query, function (err, obj) {
             if (err) {
                 restmsg.errorMsg(err);
                 res.send(restmsg);
                 return;
             }
+            var ret = {};
+            for (var key in obj) {
+                if (key != '_id') {
+                    ret[key] = obj[key];
+                }
+            }
+            if(page){ // 查询出page后封装返回
+                var objs = page.data;
+                if(objs!==null&&objs.length>0){
+                    objs = objs.map(_privateFun.prsBO2VO2);
+                    page.setData(objs);
+                }
+            }
+            ret.date = moment(obj.birthdate).format('YYYY-MM-DD HH:mm:ss');
+            console.log(ret.date)
+            console.log(ret)
             restmsg.successMsg();
-            restmsg.setResult(obj);
+            restmsg.setResult(ret.birthdate);
             res.send(restmsg);
         })
     })
     .put(function (req, res, next) {
         var restmsg = new RestMsg();
         var userid = req.params.id;
-        var updateEmail = req.body.email;
+        // var updateEmail = req.body.email;
         var updateName = req.body.name;
+        var updateTel = req.body.tel;
+        var updateBirthDate = req.body.birthdate;
+        var updateSex = req.body.sex;
+        var updateDesc = req.body.desc;
         var updateUser = {};
 
-        if (updateEmail) {
-            updateUser.email = updateEmail
-        }
+        // if (updateEmail) {
+        //     updateUser.email = updateEmail
+        // }
         if (updateName) {
             updateUser.name = updateName
+        }
+        if (updateTel) {
+            updateUser.tel = updateTel
+        }
+        if (updateBirthDate) {
+            updateUser.birthdate = updateBirthDate
+        }
+        if (updateSex) {
+            updateUser.sex = updateSex
+        }
+        if (updateDesc) {
+            updateUser.desc = updateDesc
         }
         User.update({_id: userid}, updateUser, function (err, obj) {
             if (err) {
