@@ -3,6 +3,8 @@
 /.settings
 /.idea
 /db/db.js
+/public/img/portrait
+/config.js
 /node_modules
 
 # Logs

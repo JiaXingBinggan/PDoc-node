@@ -1,5 +1,4 @@
 /**
- * Created by lijiaxing on 2017/6/14.
  *
  * 公用配置文件
  */
