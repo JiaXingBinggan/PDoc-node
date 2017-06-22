@@ -3,7 +3,9 @@
  */
 var express = require('express');
 var router = express.Router();
+var fs = require('fs');
 var moment = require('moment');
+var config = require("../../config");
 var encrypt = require('../../middlewares/encrypt');
 var common = require('../../middlewares/common');
 var userModel = require('../../model/user'); // 引入user的model
@@ -15,7 +17,7 @@ var modelGenerator = require('../../model/common/modelGenerator'); // 引入mode
 var User = modelGenerator(userModel, '_id');
 var _privateFun = router.prototype;
 
-//BO 转 VO 继承BO的字段方法2，并且进行相关字段的扩展和删除
+//Model 转 VO 继承BO的字段方法2，并且进行相关字段的扩展和删除
 _privateFun.prsBO2VO2 = function(obj){
     var result = obj.toObject({ transform: function(doc, ret, options){
         return {
@@ -225,5 +227,6 @@ router.route('/password/:id')
             })
         })
     })
+
 module.exports = router;
 

@@ -11,7 +11,8 @@ var userSchema = mongoose.Schema({
     'tel': String, // 用户手机号码
     'sex': Number, // 用户性别(0->男,1->女)
     'birthdate': Date, // 用户出生日期
-    'desc': String // 用户个人简介
+    'desc': String, // 用户个人简介
+    'portrait': String // 用户头像地址
 },{
 	versionKey:false,
 	'timestamps': {

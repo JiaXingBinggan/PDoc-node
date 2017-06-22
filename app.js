@@ -22,7 +22,6 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(session({
@@ -31,7 +30,7 @@ app.use(session({
     saveUninitialized: false, // don't create session until something stored
     resave: false,//don't save session if unmodified
     unset:'destroy',//The session will be destroyed (deleted) when the response ends.
-    cookie: { maxAge: 60000 },
+    cookie: { maxAge: null },
     store: new MongoStore({
         mongooseConnection: mongoose.connection
     })
