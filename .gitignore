@@ -6,6 +6,8 @@
 /public/img/portrait
 /config.js
 /node_modules
+/bin/1_jxingweb.cn_bundle.crt
+/bin/2_jxingweb.cn.key
 
 # Logs
 logs
