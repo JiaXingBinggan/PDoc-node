@@ -29,10 +29,13 @@ var mwMulter1 = multer({
 });
 
 router.post('/portrait/:id', mwMulter1.single('file'), function(req, res, next) {
+    if (!fs.existsSync(config.portrait)) {
+      fs.mkdirSync(config.portrait);
+    }
+
     var restmsg = new RestMsg();
     var file = req.file;
     var userid = req.params.id;
-    console.log('dd')
     var updateUser = {
         portrait: file.filename
     }
@@ -62,7 +65,9 @@ router.get('/portrait/:id', function(req, res, next) {
         var portraitUrl = config.portrait + '/' + obj.portrait
         fs.readFile(portraitUrl, function (err, data) {
            if (err) {
-               return console.error(err);
+               restmsg.errorMsg(err);
+               res.send(restmsg);
+               return;
            }
            if (data) {
              restmsg.successMsg();

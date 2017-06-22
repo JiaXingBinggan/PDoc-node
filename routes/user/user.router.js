@@ -27,7 +27,8 @@ _privateFun.prsBO2VO2 = function(obj){
             tel: ret.tel,
             sex: ret.sex,
             birthdate: ret.birthdate,
-            desc: ret.desc
+            desc: ret.desc,
+            portrait: ret.portrait
         }
     } });
     return result;
@@ -170,7 +171,6 @@ router.route('/:id')
         if (updateDesc) {
             updateUser.desc = updateDesc
         }
-        console.log(updateUser)
         User.update({_id: userid}, updateUser, function (err, obj) {
             if (err) {
                 restmsg.errorMsg(err);
