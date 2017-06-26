@@ -37,7 +37,7 @@ supervisor安装
 
 下载mongodb或者下载最新安装包
 
-+ [外网下载 https://www.mongodb.org/downloads](https://www.mongodb.org/downloads) 
++ [下载 https://www.mongodb.org/downloads](https://www.mongodb.org/downloads) 
 
 #### 启停
 
@@ -47,7 +47,7 @@ supervisor安装
 
     D:\db\mongodb\bin\mongod.exe -dbpath D:\db\mongodb\data\test
 
-####打包成windows服务方式
+#### 打包成windows服务方式
 
 安装目录下生成如下bat 执行
 
