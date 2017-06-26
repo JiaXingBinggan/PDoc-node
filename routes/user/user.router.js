@@ -203,11 +203,9 @@ router.route('/password/:id')
         var restmsg = new RestMsg();
         var userid = req.params.id;
         var updatePassword = req.body.password;
-        var imgCaptcha = req.body.imgCaptcha;
+        var svgCaptcha = req.body.svgCaptcha;
         var user = {};
-        console.log(req.session.imgCaptcha)
-        var captchaEqStatus = common.strCompare(imgCaptcha, req.session.imgCaptcha); // 前端验证码验证结果
-        console.log(captchaEqStatus)
+        var captchaEqStatus = common.strCompare(svgCaptcha, req.session.svgCaptcha); // 前端验证码验证结果
         if (captchaEqStatus == false) {
             restmsg.errorMsg('图片验证码输入错误');
             res.send(restmsg);

@@ -4,6 +4,7 @@
 
 var express = require('express');
 var router = express.Router();
+var svgCaptcha = require('svg-captcha');
 var encrypt = require('../../middlewares/encrypt');
 var imgCaptcha = require('../../middlewares/captcha');
 var gtCapthca = require('../../middlewares/gtCaptcha');
@@ -190,5 +191,23 @@ router.route('/gtCaptcha')
                 });
             }
         });
+    })
+
+router.route('/svgCaptcha')
+    .get(function(req, res, next) {
+        var captcha = svgCaptcha.create({
+            size: 4,
+            width: 90,
+            height: 35
+        });
+        var restmsg = new RestMsg();
+
+        if (captcha) {
+            req.session.svgCaptcha = captcha.text;
+            res.set('Content-Type', 'image/svg+xml');
+            restmsg.successMsg();
+            restmsg.setResult(captcha.data);
+            res.send(restmsg);
+        }
     })
 module.exports = router;
