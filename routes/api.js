@@ -9,10 +9,10 @@ var auth = require('./auth/auth.router.js');
 var file = require('./file/file.router.js');
 
 // 允许跨域访问资源，
-router.use(function(req, res, next) {
-   res.header('Access-Control-Allow-Origin', '*');
-   next();
-});
+// router.use(function(req, res, next) {
+//    res.header('Access-Control-Allow-Origin', '*');
+//    next();
+// });
 
 router.use('/auth', auth);
 router.use('/img', file);

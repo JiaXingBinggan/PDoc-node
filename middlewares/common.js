@@ -14,4 +14,13 @@ common.strCompare = function (str1, str2) {
 	return reg.test(str1);
 }
 
+/**
+ * 提取文件后缀名并生成新文件名
+ * @param filename 文件
+ */
+common.fileNewName  = function (filename) {
+	var fileFormat = (filename).split(".");
+    return Date.now() + "." + fileFormat[fileFormat.length - 1];
+}
+
 module.exports = common;

@@ -19,7 +19,8 @@ var commonConfig = {
         https_port: 3001 //https访问端口
 	},
 	image: __dirname + "/public/img", // 图片文件
-	portrait: __dirname + "/public/img/portrait" // 用户头像存放地址
+	portrait: __dirname + "/public/img/portrait", // 用户头像存放地址
+	tempimage: __dirname + '/public/temp/img' // 临时图片文件夹
 }
 
 module.exports = commonConfig;
