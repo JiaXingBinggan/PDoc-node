@@ -158,6 +158,44 @@
  		})
  	}
 
+ 	/**
+	 * 删除已发布文档
+	 *
+	 * @param query
+	 * @param bo doc
+	 * @param callback
+	 */
+	generator.pullDoc = function (query, callback) {
+	    if (!query) {
+	        query = {};
+	    }
+	    model.update({_id : query._id}, {$pull:{children:{_id: query.childrenId}}}, function (err, obj) {
+	        if (err) {
+	            return console.error(err);
+	        }
+	        callback(null,obj);
+	    });
+	}
+
+	/**
+	 * 增加已发布文档
+	 *
+	 * @param query
+	 * @param bo doc
+	 * @param callback
+	 */
+	generator.pushDoc = function (query, callback) {
+	    if (!query) {
+	        query = {};
+	    }
+	    model.update({_id : query._id}, { $pushAll: { "children": query.children } }, function (err, obj) {
+	        if (err) {
+	            return console.error(err);
+	        }
+	        callback(null,obj);
+	    });
+	}
+
  	return generator;
  }
 

@@ -7,13 +7,15 @@ var users = require('./user/user.router.js');
 var captchas = require('./captcha/captcha.router.js');
 var auth = require('./auth/auth.router.js');
 var file = require('./file/file.router.js');
+var doc = require('./doc/doc.router.js');
 
 // 允许跨域访问资源，
-router.use(function(req, res, next) {
-   res.header('Access-Control-Allow-Origin', '*');
-   next();
-});
+// router.use(function(req, res, next) {
+//    res.header('Access-Control-Allow-Origin', '*');
+//    next();
+// });
 
+router.use('/doc', doc);
 router.use('/auth', auth);
 router.use('/img', file);
 router.use('/users', users);

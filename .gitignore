@@ -4,6 +4,7 @@
 /.idea
 /db/db.js
 /public/img/portrait
+/public/temp/img
 /config.js
 /node_modules
 /bin/1_jxingweb.cn_bundle.crt
