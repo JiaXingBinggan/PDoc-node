@@ -36,6 +36,19 @@ _privateFun.prsBO2VO2 = function(obj){
 router.route('/')
   .get(function (req, res, next) {
     var restmsg = new RestMsg();
+    var query = {
+      level: 1
+    }
+    Docs.find(query, function (err, objs) {
+      if (err) {
+        restmsg.errorMsg(err);
+        res.send(restmsg);
+        return;
+      }
+      restmsg.successMsg();
+      restmsg.setResult(objs);
+      res.send(restmsg);
+    })
   })
   .post(function (req, res, next) {
     var restmsg = new RestMsg();
@@ -197,10 +210,76 @@ router.route('/:id')
   .get(function(req, res, next) {
     var restmsg = new RestMsg();
     var nodeId = req.params.id;
+    var query = {
+      _id: nodeId
+    }
+    Docs.findOne(query, function (err, objs) {
+      if (err) {
+        restmsg.errorMsg(err);
+        res.send(restmsg);
+        return;
+      }
+      restmsg.successMsg();
+      restmsg.setResult(objs);
+      res.send(restmsg);
+    })
   })
   .put(function(req, res, next) {
     var restmsg = new RestMsg();
     var nodeId = req.params.id;
+    var updateLabel = req.body.updateLabel;
+    var updateDesc = req.body.updateDesc;
+    var updateDoc = req.body.updateDoc;
+    var updateNode = {
+      label: updateLabel,
+      desc: updateDesc,
+      doc_content: updateDoc
+    }
+
+    async.waterfall([
+      function (cb) {
+        Docs.update({_id: nodeId}, updateNode, function (err, ret) {
+          Docs.findOne({_id: nodeId}, function (err, obj) {
+            var ret = obj;
+            if(ret){
+                ret = _privateFun.prsBO2VO2(ret);
+            }
+            cb(null, ret);
+          })
+        })
+      }], function (err, result) {
+        if (err) {
+          restmsg.errorMsg(err);
+          res.send(restmsg);
+          return;
+        }
+        if (result.level == 2) {
+          var query = {
+            _id: result.p_id,
+            childrenId: nodeId
+          }
+          Docs.pullDoc(query, function (err, ret) {
+            var tempChild = [];
+            tempChild.push(result);
+            var updateChildNode = {
+              children: tempChild
+            }
+            Docs.update({_id: result.p_id}, updateChildNode, function (err, ret) {
+              if (err) {
+                restmsg.errorMsg(err);
+                res.send(restmsg);
+                return;
+              }
+              restmsg.successMsg();
+              restmsg.setResult(ret);
+              res.send(restmsg);
+            })
+          })
+        }
+        if (result.level == 3) {
+
+        }
+    })
   })
   .delete(function(req, res, next) {
     var restmsg = new RestMsg();
