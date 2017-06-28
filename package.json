@@ -6,6 +6,7 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
+    "async": "^2.5.0",
     "body-parser": "~1.17.1",
     "cheerio": "^0.20.0",
     "connect-mongo": "~0.8.2",
