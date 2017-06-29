@@ -36,6 +36,7 @@ _privateFun.prsBO2VO2 = function(obj){
 function childNodeFilter (model) {
   var childNode = {
     _id: model._id,
+    label: model.label,
     level: model.level,
     relation: model.relation,
     p_id: model.p_id,
@@ -50,7 +51,7 @@ router.route('/')
     var ownerEmail = req.query.ownerEmail;
     var query = {
       level: 1,
-      ownerEmail: ownerEmail
+      owner_email: ownerEmail
     }
     var showOptions = {
       create_time: 0,
@@ -69,7 +70,7 @@ router.route('/')
   })
   .post(function (req, res, next) {
     var restmsg = new RestMsg();
-    var isRoot = req.body.isRoot;
+    var isRoot = req.body.isRoot; // 0->创建根节点,1->创建子节点
     var nodepId = req.body.pId;
     var label = req.body.label;
     var desc = req.body.desc;
@@ -82,10 +83,10 @@ router.route('/')
       desc: desc,
       doc_content: docContent,
       doc_type: docType,
-      ownerEmail: ownerEmail
+      owner_email: ownerEmail
     };
 
-    if (isRoot) {
+    if (isRoot == 0) {
       var rootPid = 0;
       newNode.p_id = rootPid;
       newNode.relation = '0.';
@@ -257,9 +258,113 @@ router.route('/:id')
         res.send(restmsg);
         return;
       }
-      restmsg.successMsg();
-      restmsg.setResult(ret);
-      res.send(restmsg);
+      Docs.findOne({_id: nodeId}, function (err, doc) {
+        if (err) {
+          restmsg.errorMsg(err);
+          res.send(restmsg);
+          return;
+        }
+        var obj = doc;
+        if(obj){
+            obj = childNodeFilter(obj);
+        }
+        if (obj.level == 2) {
+          var query = {
+            _id: obj.p_id,
+            childrenId: obj._id
+          }
+          async.waterfall([
+            function (cb) {
+              Docs.pullDoc(query, function (err, ret) {
+                Docs.findOne({_id: obj.p_id}, function (err, doc) {
+                  cb(null, doc.children);
+                })
+              })
+            },
+            function (chil, cb) {
+              chil.push(obj);
+              var updateNode = {
+                children: chil
+              }
+              Docs.update({_id: obj.p_id}, updateNode, function (err, ret) {
+                cb(null, ret);
+              })
+            }
+          ], function (err, result) {
+            if (err) {
+              restmsg.errorMsg(err);
+              res.send(restmsg);
+              return;
+            }
+            restmsg.successMsg();
+            restmsg.setResult(result);
+            res.send(restmsg);
+          })
+        }
+        if (obj.level == 3) {
+          var query = {
+            _id: obj.p_id,
+            childrenId: obj._id
+          }
+          async.waterfall([
+            function (cb) {
+              Docs.pullDoc(query, function (err, ret) {
+                Docs.findOne({_id: obj.p_id}, function (err, doc) {
+                  cb(null, doc.children);
+                })
+              })
+            },
+            function (chil, cb) {
+              chil.push(obj);
+              var updateNode = {
+                children: chil
+              }
+              Docs.update({_id: obj.p_id}, updateNode, function (err, ret) {
+                Docs.findOne({_id: obj.p_id}, function (err, doc) {
+                  var obj = doc;
+                  if (obj) {
+                      obj = childNodeFilter(obj);
+                  }
+                  cb(null, obj);
+                })
+              })
+            },
+            function (level2obj, cb) {
+              var query = {
+                _id: level2obj.p_id,
+                childrenId: level2obj._id
+              }
+              Docs.pullDoc(query, function (err, ret) {
+                Docs.findOne({_id: level2obj.p_id}, function (err, level1obj) {
+                  var tempNode = {
+                    rootNodeChild: level1obj.children,
+                    level2node: level2obj
+                  }
+                  cb(null, tempNode);
+                })
+              })
+            },
+            function (node, cb) {
+              node.rootNodeChild.push(node.level2node);
+              var updateNode = {
+                children: node.rootNodeChild
+              }
+              Docs.update({_id: node.level2node.p_id}, updateNode, function (err, ret) {
+                cb(null, ret);
+              })
+            }
+          ], function (err, result) {
+            if (err) {
+              restmsg.errorMsg(err);
+              res.send(restmsg);
+              return;
+            }
+            restmsg.successMsg();
+            restmsg.setResult(result);
+            res.send(restmsg);
+          })
+        }
+      })
     })
   })
   .delete(function(req, res, next) {

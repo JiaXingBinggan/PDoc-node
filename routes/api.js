@@ -15,7 +15,7 @@ var doc = require('./doc/doc.router.js');
 //    next();
 // });
 
-router.use('/doc', doc);
+router.use('/docs', doc);
 router.use('/auth', auth);
 router.use('/img', file);
 router.use('/users', users);
