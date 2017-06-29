@@ -20,7 +20,6 @@ _privateFun.prsBO2VO2 = function(obj){
     var result = obj.toObject({ transform: function(doc, ret, options){
         return {
             _id: ret._id,
-            label: ret.label,
             doc_type: ret.doc_type,
             level: ret.level,
             relation: ret.relation,
@@ -33,13 +32,31 @@ _privateFun.prsBO2VO2 = function(obj){
     return result;
 }
 
+// 子节点字段过滤器
+function childNodeFilter (model) {
+  var childNode = {
+    _id: model._id,
+    level: model.level,
+    relation: model.relation,
+    p_id: model.p_id,
+    children: model.children
+  }
+  return childNode;
+}
+
 router.route('/')
   .get(function (req, res, next) {
     var restmsg = new RestMsg();
+    var ownerEmail = req.query.ownerEmail;
     var query = {
-      level: 1
+      level: 1,
+      ownerEmail: ownerEmail
     }
-    Docs.find(query, function (err, objs) {
+    var showOptions = {
+      create_time: 0,
+      update_time: 0
+    }
+    Docs.find(query, showOptions, function (err, objs) {
       if (err) {
         restmsg.errorMsg(err);
         res.send(restmsg);
@@ -58,12 +75,14 @@ router.route('/')
     var desc = req.body.desc;
     var docContent = req.body.docContent;
     var docType = req.body.docType;
+    var ownerEmail = req.body.ownerEmail;
 
     var newNode = {
       label: label,
       desc: desc,
       doc_content: docContent,
-      doc_type: docType
+      doc_type: docType,
+      ownerEmail: ownerEmail
     };
 
     if (isRoot) {
@@ -105,11 +124,15 @@ router.route('/')
           res.send(restmsg);
           return;
         }
-        Docs.save(result, function (err, obj) { // 保存新节点
+        Docs.save(result, function (err, ret) { // 保存新节点
           if (err) {
             restmsg.errorMsg(err);
             res.send(restmsg);
             return;
+          }
+          var obj = ret;
+          if(obj){
+              obj = childNodeFilter(obj);
           }
           // 更新新节点对应根节点children数组
           if (obj.level == 2) {
@@ -117,11 +140,7 @@ router.route('/')
             async.waterfall([
               function (cb) {
                 Docs.findOne({_id: obj.p_id}, function (err, ret) {
-                  var doc = ret;
-                  if(doc){
-                      doc = _privateFun.prsBO2VO2(doc);
-                  }
-                  cb(null, doc.children);
+                  cb(null, ret.children);
                 })
               },
               function (children, cb) {
@@ -151,29 +170,17 @@ router.route('/')
             async.waterfall([
               function (cb) {
                 Docs.findOne({_id: obj.p_id}, function (err, ret) {
-                  var doc = ret;
-                  if(doc){
-                      doc = _privateFun.prsBO2VO2(doc);
-                  }
-                  cb(null, doc.children); // 二级节点子节点数组
+                  cb(null, ret.children); // 二级节点子节点数组
                 })
               },
               function (chil, cb) {
-                var objvo = obj;
-                if(objvo){
-                    objvo = _privateFun.prsBO2VO2(objvo);
-                }
-                chil.push(objvo);
+                chil.push(obj);
                 var updateNode = {
                   children: chil
                 };
                 Docs.update({_id: obj.p_id}, updateNode, function (err, ret) {
                   Docs.findOne({_id: obj.p_id}, function (err, doc) {
-                    var obj = doc;
-                    if(obj){
-                        obj = _privateFun.prsBO2VO2(obj);
-                    }
-                    cb(null, obj); // 二级节点
+                    cb(null, doc); // 二级节点
                   })
                 })
               },
@@ -184,13 +191,13 @@ router.route('/')
                 }
                 Docs.pullDoc(query, function (err, ret) {
                     Docs.findOne({_id: rootId}, function (err, rootdoc) {
-                      var ret = rootdoc;
-                      if(ret){
-                          ret = _privateFun.prsBO2VO2(ret);
+                      var obj = doc;
+                      if(obj){
+                          obj = childNodeFilter(obj);
                       }
-                      ret.children.push(doc);
+                      rootdoc.children.push(obj);
                       var updateNode = {
-                        children: ret.children
+                        children: rootdoc.children
                       };
                       Docs.update({_id: rootId}, updateNode, function (err, ret) {
                         cb(null, ret);
@@ -221,14 +228,14 @@ router.route('/:id')
     var query = {
       _id: nodeId
     }
-    Docs.findOne(query, function (err, objs) {
+    Docs.findOne(query, function (err, obj) {
       if (err) {
         restmsg.errorMsg(err);
         res.send(restmsg);
         return;
       }
       restmsg.successMsg();
-      restmsg.setResult(objs);
+      restmsg.setResult(obj);
       res.send(restmsg);
     })
   })
@@ -244,124 +251,141 @@ router.route('/:id')
       doc_content: updateDoc
     }
 
-    async.waterfall([
-      function (cb) {
-        Docs.update({_id: nodeId}, updateNode, function (err, ret) {
-          Docs.findOne({_id: nodeId}, function (err, obj) {
-            var ret = obj;
-            if(ret){
-                ret = _privateFun.prsBO2VO2(ret);
-            }
-            cb(null, ret);
-          })
-        })
-      }], function (err, result) {
-        if (err) {
-          restmsg.errorMsg(err);
-          res.send(restmsg);
-          return;
-        }
-        if (result.level == 2) {
-          var query = {
-            _id: result.p_id,
-            childrenId: nodeId
-          }
-          Docs.pullDoc(query, function (err, ret) {
-            var tempChild = [];
-            tempChild.push(result); // level2的节点
-            var updateChildNode = {
-              children: tempChild
-            }
-            Docs.update({_id: result.p_id}, updateChildNode, function (err, ret) {
-              if (err) {
-                restmsg.errorMsg(err);
-                res.send(restmsg);
-                return;
-              }
-              restmsg.successMsg();
-              restmsg.setResult(ret);
-              res.send(restmsg);
-            })
-          })
-        }
-        if (result.level == 3) {
-          var query = {
-            _id: result.p_id,
-            childrenId: result._id
-          }
-          async.waterfall([
-            function (cb) { // 对二级节点操作
-              Docs.pullDoc(query, function (err, ret) {
-                Docs.findOne({_id: result.p_id}, function (err, obj) {
-                  var ret = obj;
-                  if(ret){
-                      ret = _privateFun.prsBO2VO2(ret);
-                  }
-                  cb(null, ret.children);
-                })
-              })
-            },
-            function (level2Chil, cb) {
-              level2Chil.push(result);
-              var updateNode = {
-                children: level2Chil
-              }
-              Docs.update({_id: result.p_id}, updateNode, function (err, ret) {
-                Docs.findOne({_id: result.p_id}, function (err, obj) {
-                  var ret = obj;
-                  if(ret){
-                      ret = _privateFun.prsBO2VO2(ret);
-                  }
-                  cb(null, ret);
-                })
-              })
-            },
-            function (level2Node, cb) {
-              var query = {
-                _id: level2Node.p_id,
-                childrenId: level2Node._id
-              }
-              Docs.pullDoc(query, function (err, ret) {
-                Docs.findOne({_id: level2Node.p_id}, function (err, obj) {
-                  var ret = obj;
-                  if(ret){
-                      ret = _privateFun.prsBO2VO2(ret);
-                  }
-                  var result = {
-                    updateLevel2: level2Node,
-                    children: ret.children,
-                    _id: ret._id
-                  }
-                  cb(null, result);
-                })
-              })
-            },
-            function (level1Ret, cb) {
-              level1Ret.children.push(level1Ret.updateLevel2);
-              var updateNode = {
-                children: level1Ret.children
-              }
-              console.log(updateNode)
-              Docs.update({_id: level1Ret._id}, updateNode, function (err, ret) {
-                cb(null, ret);
-              })
-            }
-          ], function (err, result) {
-              if (err) {
-                restmsg.errorMsg(err);
-                res.send(restmsg);
-                return;
-              }
-              restmsg.successMsg();
-              restmsg.setResult(result);
-              res.send(restmsg);
-            })
-        }
+    Docs.update({_id: nodeId}, updateNode, function (err, ret) {
+      if (err) {
+        restmsg.errorMsg(err);
+        res.send(restmsg);
+        return;
+      }
+      restmsg.successMsg();
+      restmsg.setResult(ret);
+      res.send(restmsg);
     })
   })
   .delete(function(req, res, next) {
     var restmsg = new RestMsg();
-    var nodeId = req.params.id;
+    var nodeId = req.params.id; 
+
+    Docs.findOne({_id: nodeId}, function (err, obj) {
+      if (err) {
+        restmsg.errorMsg(err);
+        res.send(restmsg);
+        return;
+      }
+      if (obj.level == 1) {
+          var query = {
+            "$or": [{
+                relation: new RegExp(obj._id)
+            }, {
+                _id: obj._id
+            }]
+          }  
+          Docs.delete(query, function (err, ret) {
+            if (err) {
+              restmsg.errorMsg(err);
+              res.send(restmsg);
+              return;
+            }
+            restmsg.successMsg();
+            restmsg.setResult(ret);
+            res.send(restmsg);
+          })  
+      }
+      if (obj.level == 2) {
+        var query = {
+            "$or": [{
+                relation: new RegExp(obj._id)
+            }, {
+                _id: obj._id
+            }]
+          }  
+        async.waterfall([
+          function (cb) {
+            Docs.delete(query, function (err, ret) {
+              cb(null, ret);
+            })
+          },
+          function (ret, cb) {
+            var query = {
+              _id: obj.p_id,
+              childrenId: obj._id
+            }
+            Docs.pullDoc(query, function (err, ret) {
+              cb(null, ret);
+            })
+          }
+        ], function (err, result) {
+          if (err) {
+            restmsg.errorMsg(err);
+            res.send(restmsg);
+            return;
+          }
+          restmsg.successMsg();
+          restmsg.setResult(result);
+          res.send(restmsg);
+        })
+      }
+      if (obj.level == 3) {
+        async.waterfall([
+          function (cb) {
+            Docs.findOne({_id: nodeId}, function (err, level3obj) {
+              cb(null, level3obj);
+            })
+          },
+          function (obj, cb) {
+            Docs.delete({_id: obj._id}, function (err, ret) {
+              cb(null, obj);
+            })
+          },
+          function (obj, cb) {
+            var query = {
+              _id: obj.p_id,
+              childrenId: obj._id
+            }
+            Docs.pullDoc(query, function (err, ret) {
+              Docs.findOne({_id: query._id}, function (err, level2obj) {
+                cb(null, level2obj);
+              })
+            })
+          },
+          function (obj, cb) {
+            var query = {
+              _id: obj.p_id,
+              childrenId: obj._id
+            }
+            Docs.pullDoc(query, function (err, ret) {
+              Docs.findOne({_id: obj._id}, function (err, level2obj) {
+                cb(null, level2obj);
+              })
+            })
+          },
+          function (obj, cb) {
+            Docs.findOne({_id: obj.p_id}, function (err, level1obj) {
+              var ret = level1obj;
+              if(ret){
+                  ret = childNodeFilter(ret);
+              }
+              ret.children.push(obj);
+              var updateNode = {
+                children: ret.children
+              }
+              Docs.update({_id: obj.p_id}, updateNode, function (err, ret) {
+                cb(null, ret);
+              })
+            })
+          }
+        ], function (err, result) {
+          if (err) {
+            restmsg.errorMsg(err);
+            res.send(restmsg);
+            return;
+          }
+          restmsg.successMsg();
+          restmsg.setResult(result);
+          res.send(restmsg);
+        })
+      }
+    })
   })
 
 module.exports = router;

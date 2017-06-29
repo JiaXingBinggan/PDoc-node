@@ -5,11 +5,12 @@
 var mongoose = require("../db/db");
 
 var docSchema = mongoose.Schema({
+    'owner_email': String, // 文档所有者邮箱
     'label': String, // 节点名称
     'p_id': String, // 父节点id
     'children': Array, // 子节点数组
     'doc_type': Boolean, // 文档类型
-    'level': String, // 节点所处层级,最多三级
+    'level': Number, // 节点所处层级,最多三级
     'relation': String, // 拼接祖宗节点的ID信息
     'desc': String, // 描述
     'doc_content': String // 文档内容

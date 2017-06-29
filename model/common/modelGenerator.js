@@ -11,12 +11,16 @@
 	 * @param query
 	 * @param callback
 	 */
- 	generator.find = function (query, callback) {
+ 	generator.find = function (query, options, callback) {
  		if (!query) {
  			query = {};
  		}
 
- 		model.find(query, function (err, ret) {
+ 		if (!options) {
+ 			options = {}
+ 		}
+ 		
+ 		model.find(query, options, function (err, ret) {
  			if (err) {
                 return callback(err);
             }
