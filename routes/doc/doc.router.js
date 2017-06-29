@@ -19,7 +19,7 @@ var _privateFun = router.prototype;
 _privateFun.prsBO2VO2 = function(obj){
     var result = obj.toObject({ transform: function(doc, ret, options){
         return {
-            id: ret._id,
+            _id: ret._id,
             label: ret.label,
             doc_type: ret.doc_type,
             level: ret.level,
@@ -52,7 +52,7 @@ router.route('/')
   })
   .post(function (req, res, next) {
     var restmsg = new RestMsg();
-    var isRoot = req.body.isRootNode;
+    var isRoot = req.body.isRoot;
     var nodepId = req.body.pId;
     var label = req.body.label;
     var desc = req.body.desc;
@@ -159,13 +159,21 @@ router.route('/')
                 })
               },
               function (chil, cb) {
-                chil.push(obj);
+                var objvo = obj;
+                if(objvo){
+                    objvo = _privateFun.prsBO2VO2(objvo);
+                }
+                chil.push(objvo);
                 var updateNode = {
                   children: chil
                 };
                 Docs.update({_id: obj.p_id}, updateNode, function (err, ret) {
                   Docs.findOne({_id: obj.p_id}, function (err, doc) {
-                    cb(null, doc); // 二级节点
+                    var obj = doc;
+                    if(obj){
+                        obj = _privateFun.prsBO2VO2(obj);
+                    }
+                    cb(null, obj); // 二级节点
                   })
                 })
               },
@@ -260,7 +268,7 @@ router.route('/:id')
           }
           Docs.pullDoc(query, function (err, ret) {
             var tempChild = [];
-            tempChild.push(result);
+            tempChild.push(result); // level2的节点
             var updateChildNode = {
               children: tempChild
             }
@@ -277,7 +285,77 @@ router.route('/:id')
           })
         }
         if (result.level == 3) {
-
+          var query = {
+            _id: result.p_id,
+            childrenId: result._id
+          }
+          async.waterfall([
+            function (cb) { // 对二级节点操作
+              Docs.pullDoc(query, function (err, ret) {
+                Docs.findOne({_id: result.p_id}, function (err, obj) {
+                  var ret = obj;
+                  if(ret){
+                      ret = _privateFun.prsBO2VO2(ret);
+                  }
+                  cb(null, ret.children);
+                })
+              })
+            },
+            function (level2Chil, cb) {
+              level2Chil.push(result);
+              var updateNode = {
+                children: level2Chil
+              }
+              Docs.update({_id: result.p_id}, updateNode, function (err, ret) {
+                Docs.findOne({_id: result.p_id}, function (err, obj) {
+                  var ret = obj;
+                  if(ret){
+                      ret = _privateFun.prsBO2VO2(ret);
+                  }
+                  cb(null, ret);
+                })
+              })
+            },
+            function (level2Node, cb) {
+              var query = {
+                _id: level2Node.p_id,
+                childrenId: level2Node._id
+              }
+              Docs.pullDoc(query, function (err, ret) {
+                Docs.findOne({_id: level2Node.p_id}, function (err, obj) {
+                  var ret = obj;
+                  if(ret){
+                      ret = _privateFun.prsBO2VO2(ret);
+                  }
+                  var result = {
+                    updateLevel2: level2Node,
+                    children: ret.children,
+                    _id: ret._id
+                  }
+                  cb(null, result);
+                })
+              })
+            },
+            function (level1Ret, cb) {
+              level1Ret.children.push(level1Ret.updateLevel2);
+              var updateNode = {
+                children: level1Ret.children
+              }
+              console.log(updateNode)
+              Docs.update({_id: level1Ret._id}, updateNode, function (err, ret) {
+                cb(null, ret);
+              })
+            }
+          ], function (err, result) {
+              if (err) {
+                restmsg.errorMsg(err);
+                res.send(restmsg);
+                return;
+              }
+              restmsg.successMsg();
+              restmsg.setResult(result);
+              res.send(restmsg);
+            })
         }
     })
   })
