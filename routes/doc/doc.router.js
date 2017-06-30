@@ -20,6 +20,7 @@ _privateFun.prsBO2VO2 = function(obj){
     var result = obj.toObject({ transform: function(doc, ret, options){
         return {
             _id: ret._id,
+            label: ret.label,
             doc_type: ret.doc_type,
             level: ret.level,
             relation: ret.relation,
@@ -75,6 +76,7 @@ router.route('/')
     var label = req.body.label;
     var desc = req.body.desc;
     var docContent = req.body.docContent;
+    var mdHtml = req.body.mdHtml;
     var docType = req.body.docType;
     var ownerEmail = req.body.ownerEmail;
 
@@ -85,6 +87,10 @@ router.route('/')
       doc_type: docType,
       owner_email: ownerEmail
     };
+
+    if (mdHtml) {
+      newNode.md_html = mdHtml
+    }
 
     if (isRoot == 0) {
       var rootPid = 0;
@@ -268,6 +274,12 @@ router.route('/:id')
         if(obj){
             obj = childNodeFilter(obj);
         }
+        if (obj.level == 1) {
+          restmsg.successMsg();
+          restmsg.setResult(ret);
+          res.send(restmsg);
+        }
+
         if (obj.level == 2) {
           var query = {
             _id: obj.p_id,

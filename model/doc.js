@@ -13,7 +13,8 @@ var docSchema = mongoose.Schema({
     'level': Number, // 节点所处层级,最多三级
     'relation': String, // 拼接祖宗节点的ID信息
     'desc': String, // 描述
-    'doc_content': String // 文档内容
+    'doc_content': String, // 文档内容
+    'md_html': String // md文档html
 },{
 	versionKey:false,
 	'timestamps': {
