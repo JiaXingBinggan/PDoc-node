@@ -11,12 +11,16 @@
 	 * @param query
 	 * @param callback
 	 */
- 	generator.find = function (query, callback) {
+ 	generator.find = function (query, options, callback) {
  		if (!query) {
  			query = {};
  		}
 
- 		model.find(query, function (err, ret) {
+ 		if (!options) {
+ 			options = {}
+ 		}
+ 		
+ 		model.find(query, options, function (err, ret) {
  			if (err) {
                 return callback(err);
             }
@@ -157,6 +161,44 @@
  			callback(null, ret);
  		})
  	}
+
+ 	/**
+	 * 删除已发布文档
+	 *
+	 * @param query
+	 * @param bo doc
+	 * @param callback
+	 */
+	generator.pullDoc = function (query, callback) {
+	    if (!query) {
+	        query = {};
+	    }
+	    model.update({_id : query._id}, {$pull:{children:{_id: query.childrenId}}}, function (err, obj) {
+	        if (err) {
+	            return console.error(err);
+	        }
+	        callback(null,obj);
+	    });
+	}
+
+	/**
+	 * 增加已发布文档
+	 *
+	 * @param query
+	 * @param bo doc
+	 * @param callback
+	 */
+	generator.pushDoc = function (query, callback) {
+	    if (!query) {
+	        query = {};
+	    }
+	    model.update({_id : query._id}, { $pushAll: { "children": query.children } }, function (err, obj) {
+	        if (err) {
+	            return console.error(err);
+	        }
+	        callback(null,obj);
+	    });
+	}
 
  	return generator;
  }
