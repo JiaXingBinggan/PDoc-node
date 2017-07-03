@@ -97,15 +97,52 @@ router.route('/')
       newNode.p_id = rootPid;
       newNode.relation = '0.';
       newNode.level = 1;
-      Docs.save(newNode, function (err, obj) {
+      var query = {
+        level: 1,
+        owner_email: ownerEmail
+      }
+      async.waterfall([
+        function (cb) {
+           Docs.find(query, function (err, objs) {
+            cb(null, objs);
+          })
+        },
+        function (objs, cb) {
+          var labelConflict = false;
+          for (var i = 0; i < objs.length; i++) {
+            if (objs[i].label == label) {
+              labelConflict = true;
+              break;
+            }
+          }
+          if (labelConflict == true) {
+            cb(null, true);
+          } else {
+            cb(null, false);
+          }
+        }
+      ], function (err, result) {
         if (err) {
           restmsg.errorMsg(err);
           res.send(restmsg);
           return;
         }
-        restmsg.successMsg();
-        restmsg.setResult(obj._id);
-        res.send(restmsg);
+        if (result == true) {
+          restmsg.errorMsg('已存在相同名称根文档');
+          res.send(restmsg);
+          return;
+        } else {
+          Docs.save(newNode, function (err, obj) {
+            if (err) {
+              restmsg.errorMsg(err);
+              res.send(restmsg);
+              return;
+            }
+            restmsg.successMsg();
+            restmsg.setResult(obj._id);
+            res.send(restmsg);
+          })
+        }
       })
     } else {
       newNode.p_id = nodepId;
@@ -115,15 +152,21 @@ router.route('/')
             cb(null, ret);
           })},
           function (ret, cb) {
-            if (ret.p_id == 0) {
-              newNode.level = 2;
-              newNode.relation = '0.' + nodepId + '.';
-              cb(null, newNode);
+            if (ret.label == label) {
+              var msg = '不能与父节点重名'
+              cb(null, msg)
             } else {
-              newNode.level = 3;
-              newNode.relation = ret.relation + '.' + nodepId + '.';
-              cb(null, newNode);
+              if (ret.p_id == 0) {
+                newNode.level = 2;
+                newNode.relation = '0.' + nodepId + '.';
+                cb(null, newNode);
+              } else {
+                newNode.level = 3;
+                newNode.relation = ret.relation + '.' + nodepId + '.';
+                cb(null, newNode);
+              }
             }
+            
           },
       ], function (err, result) {
         if (err) {
@@ -131,101 +174,130 @@ router.route('/')
           res.send(restmsg);
           return;
         }
-        Docs.save(result, function (err, ret) { // 保存新节点
-          if (err) {
-            restmsg.errorMsg(err);
-            res.send(restmsg);
-            return;
-          }
-          var obj = ret;
-          if(obj){
-              obj = childNodeFilter(obj);
-          }
-          // 更新新节点对应根节点children数组
-          if (obj.level == 2) {
-            // 二级新节点直接更新对应根节点children数组
-            async.waterfall([
-              function (cb) {
-                Docs.findOne({_id: obj.p_id}, function (err, ret) {
-                  cb(null, ret.children);
-                })
-              },
-              function (children, cb) {
-                children.push(obj);
-                var updateNode = {
-                  children: children
-                };
-                Docs.update({_id: obj.p_id}, updateNode, function (err, ret) {
-                  cb(null, ret);
-                })
-              }
-            ], function (err, result) {
-              if (err) {
-                restmsg.errorMsg(err);
-                res.send(restmsg);
-                return;
-              }
-              restmsg.successMsg();
-              restmsg.setResult(result);
+        if (result == '不能与父节点重名') {
+          restmsg.errorMsg(result);
+          res.send(restmsg);
+          return;
+        } else {
+          Docs.save(result, function (err, ret) { // 保存新节点
+            if (err) {
+              restmsg.errorMsg(err);
               res.send(restmsg);
-            })
-          }
-          if (obj.level == 3) {
-            // 三级新节点首先更新上一级节点children数组,再更新对应根节点内children数组
-            var idArr = obj.relation.split('.');
-            var rootId = idArr[1];
-            async.waterfall([
-              function (cb) {
-                Docs.findOne({_id: obj.p_id}, function (err, ret) {
-                  cb(null, ret.children); // 二级节点子节点数组
-                })
-              },
-              function (chil, cb) {
-                chil.push(obj);
-                var updateNode = {
-                  children: chil
-                };
-                Docs.update({_id: obj.p_id}, updateNode, function (err, ret) {
-                  Docs.findOne({_id: obj.p_id}, function (err, doc) {
-                    cb(null, doc); // 二级节点
+              return;
+            }
+            var obj = ret;
+            if(obj){
+                obj = childNodeFilter(obj);
+            }
+            // 更新新节点对应根节点children数组
+            if (obj.level == 2) {
+              // 二级新节点直接更新对应根节点children数组
+              async.waterfall([
+                function (cb) {
+                  Docs.findOne({_id: obj.p_id}, function (err, ret) {
+                    cb(null, ret.children);
                   })
-                })
-              },
-              function (doc, cb) {
-                var query = {
-                  _id: rootId,
-                  childrenId: doc._id
+                },
+                function (children, cb) {
+                  children.push(obj);
+                  var updateNode = {
+                    children: children
+                  };
+                  Docs.update({_id: obj.p_id}, updateNode, function (err, ret) {
+                    cb(null, ret);
+                  })
                 }
-                Docs.pullDoc(query, function (err, ret) {
-                    Docs.findOne({_id: rootId}, function (err, rootdoc) {
-                      var obj = doc;
-                      if(obj){
-                          obj = childNodeFilter(obj);
-                      }
-                      rootdoc.children.push(obj);
-                      var updateNode = {
-                        children: rootdoc.children
-                      };
-                      Docs.update({_id: rootId}, updateNode, function (err, ret) {
-                        cb(null, ret);
-                      })
-                    })
-                })
-              }
-            ], function (err, result) {
-              if (err) {
-                restmsg.errorMsg(err);
+              ], function (err, result) {
+                if (err) {
+                  restmsg.errorMsg(err);
+                  res.send(restmsg);
+                  return;
+                }
+                restmsg.successMsg();
+                restmsg.setResult(result);
                 res.send(restmsg);
-                return;
-              }
-              restmsg.successMsg();
-              restmsg.setResult(result);
-              res.send(restmsg);
-            })
-          }
-        })
+              })
+            }
+            if (obj.level == 3) {
+              // 三级新节点首先更新上一级节点children数组,再更新对应根节点内children数组
+              var idArr = obj.relation.split('.');
+              var rootId = idArr[1];
+              async.waterfall([
+                function (cb) {
+                  Docs.findOne({_id: obj.p_id}, function (err, ret) {
+                    cb(null, ret.children); // 二级节点子节点数组
+                  })
+                },
+                function (chil, cb) {
+                  chil.push(obj);
+                  var updateNode = {
+                    children: chil
+                  };
+                  Docs.update({_id: obj.p_id}, updateNode, function (err, ret) {
+                    Docs.findOne({_id: obj.p_id}, function (err, doc) {
+                      cb(null, doc); // 二级节点
+                    })
+                  })
+                },
+                function (doc, cb) {
+                  var query = {
+                    _id: rootId,
+                    childrenId: doc._id
+                  }
+                  Docs.pullDoc(query, function (err, ret) {
+                      Docs.findOne({_id: rootId}, function (err, rootdoc) {
+                        var obj = doc;
+                        if(obj){
+                            obj = childNodeFilter(obj);
+                        }
+                        rootdoc.children.push(obj);
+                        var updateNode = {
+                          children: rootdoc.children
+                        };
+                        Docs.update({_id: rootId}, updateNode, function (err, ret) {
+                          cb(null, ret);
+                        })
+                      })
+                  })
+                }
+              ], function (err, result) {
+                if (err) {
+                  restmsg.errorMsg(err);
+                  res.send(restmsg);
+                  return;
+                }
+                restmsg.successMsg();
+                restmsg.setResult(result);
+                res.send(restmsg);
+              })
+            }
+          })
+        }
       })
     }
+  })
+
+router.route('/doclabel')
+  .get(function (req, res, next) {
+    var restmsg = new RestMsg();
+    var doc_label = req.query.docLabel;
+    var query = {
+      label: doc_label
+    }
+    Docs.findOne(query, function (err, obj) {
+      if (err) {
+        restmsg.errorMsg(err);
+        res.send(restmsg);
+        return;
+      }
+      restmsg.successMsg();
+      if (obj) {
+        restmsg.setResult(obj._id);
+      } else {
+        restmsg.setResult(null);
+      }
+      res.send(restmsg);
+    })
   })
 
 router.route('/:id')
@@ -505,5 +577,5 @@ router.route('/:id')
     })
   })
 
-module.exports = router;
 
+module.exports = router;
