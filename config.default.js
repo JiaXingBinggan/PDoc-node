@@ -18,6 +18,14 @@ var commonConfig = {
         http_port: 3000, //http访问端口
         https_port: 3001 //https访问端口
 	},
+	geetest: {
+		id: 'xxx',  // 极验账户分配的id
+		key: 'xxx' // 极验账户分配的key
+	},
+	qiniu: {
+		ACCESS_KEY: 'xxx', // 七牛云储存的access_key
+		SECRET_KEY: 'xxx' // 七牛云储存的secret_key
+	},
 	image: __dirname + "/public/img", // 图片文件
 	portrait: __dirname + "/public/img/portrait", // 用户头像存放地址
 	tempimage: __dirname + '/public/temp/img' // 临时图片文件夹

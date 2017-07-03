@@ -3,11 +3,11 @@
 **/
 
 var qiniu = require("qiniu");
-
+var config = require('../config');
 
 // 需要填写你的 Access Key 和 Secret Key
-qiniu.conf.ACCESS_KEY = 'KigokUOwyMRvIcz9kAEDXcuXp_cKA7ArfqZ1HnVP';
-qiniu.conf.SECRET_KEY = 'I5PzHT5RfauiiOyr3FYI17WHD1A2URxAR4hrBcWn';
+qiniu.conf.ACCESS_KEY = config.qiniu.ACCESS_KEY;
+qiniu.conf.SECRET_KEY = config.qiniu.SECRET_KEY;
 
 var qn = {};
 
