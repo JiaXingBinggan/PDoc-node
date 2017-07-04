@@ -109,7 +109,7 @@ router.post('/qiniu/:id', mwMulter1.single('file'), function (req, res, next) {
     var updateUser = {
         portrait: filename
     }
-    var bucket = 'ljx-img2';
+    var bucket = config.qiniu.BUCKET;
     var key = 'img/portrait/' + filename;
     var token = qiniu.uptoken(bucket, key);
 
@@ -156,7 +156,7 @@ router.post('/mdeditor', mwMulter2.single('file'), function (req, res, next) {
     var updateUser = {
         portrait: filename
     }
-    var bucket = 'ljx-img2';
+    var bucket = config.qiniu.BUCKET;
     var key = 'img/docimgs/' + filename;
     var token = qiniu.uptoken(bucket, key);
 

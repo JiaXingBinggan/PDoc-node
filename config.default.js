@@ -24,7 +24,8 @@ var commonConfig = {
 	},
 	qiniu: {
 		ACCESS_KEY: 'xxx', // 七牛云储存的access_key
-		SECRET_KEY: 'xxx' // 七牛云储存的secret_key
+		SECRET_KEY: 'xxx', // 七牛云储存的secret_key
+		BUCKET: 'xxx' // 七牛云储存的上传空间
 	},
 	image: __dirname + "/public/img", // 图片文件
 	portrait: __dirname + "/public/img/portrait", // 用户头像存放地址
