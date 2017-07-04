@@ -11,6 +11,9 @@ qiniu.conf.SECRET_KEY = config.qiniu.SECRET_KEY;
 
 var qn = {};
 
+// 构建bucketmanager对象
+var client = new qiniu.rs.Client();
+
 /**
  * 构建上传策略函数
  * @bucket 要上传的空间
@@ -45,6 +48,22 @@ qn.uploadFile = function (uptoken, key, localFile, callback) {
         callback(err);
       }
   });
+}
+
+/**
+ * 删除资源
+ * @bucket 文件所在的空间
+ * @key 上传到七牛后保存的文件名
+ */
+qn.deleteFile = function (bucket, key, callback) {
+  client.remove(bucket, key, function(err, ret) {
+    if (!err) {
+      callback(null, '删除成功');
+    } else {
+      console.log(err);
+      callback(err);
+    }
+  })
 }
 
 module.exports = qn;

@@ -466,6 +466,20 @@ router.route('/:id')
         res.send(restmsg);
         return;
       }
+      var images = obj.doc_content.match(/\!\[image\]\(\/docimgs\/(.+?)\)/g); 
+      var bucket = 'ljx-img2';
+      if (images.length > 0) {
+        for (var i = 0; i < images.length; i++) {
+          var key = 'img/docimgs/' + images[i].slice(18, 35);
+          qiniu.deleteFile(bucket, key, function (err, ret) {
+              if (err) {
+                restmsg.errorMsg(err);
+                res.send(restmsg);
+                return;
+              }
+          })
+        }
+      }
       if (obj.level == 1) {
           var query = {
             "$or": [{
