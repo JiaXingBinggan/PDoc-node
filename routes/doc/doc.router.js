@@ -324,10 +324,15 @@ router.route('/:id')
     var updateLabel = req.body.updateLabel;
     var updateDesc = req.body.updateDesc;
     var updateDoc = req.body.updateDoc;
+    var updateMdHtml = req.body.updateMdHtml;
     var updateNode = {
       label: updateLabel,
       desc: updateDesc,
       doc_content: updateDoc
+    }
+
+    if (updateMdHtml) {
+      updateNode.md_html = updateMdHtml
     }
 
     Docs.update({_id: nodeId}, updateNode, function (err, ret) {
