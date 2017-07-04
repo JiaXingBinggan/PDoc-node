@@ -92,6 +92,22 @@ router.route('/')
       newNode.md_html = mdHtml
     }
 
+    if (!label) {
+      restmsg.errorMsg('请输入文章标题');
+      res.send(restmsg);
+      return;
+    }
+    if (!desc) {
+      restmsg.errorMsg('请输入文章描述');
+      res.send(restmsg);
+      return;
+    }
+    if (!docContent) {
+      restmsg.errorMsg('请输入文章内容');
+      res.send(restmsg);
+      return;
+    }
+
     if (isRoot == 0) {
       var rootPid = 0;
       newNode.p_id = rootPid;
@@ -466,20 +482,23 @@ router.route('/:id')
         res.send(restmsg);
         return;
       }
-      var images = obj.doc_content.match(/\!\[image\]\(\/docimgs\/(.+?)\)/g); 
-      var bucket = 'ljx-img2';
-      if (images.length > 0) {
-        for (var i = 0; i < images.length; i++) {
-          var key = 'img/docimgs/' + images[i].slice(18, 35);
-          qiniu.deleteFile(bucket, key, function (err, ret) {
-              if (err) {
-                restmsg.errorMsg(err);
-                res.send(restmsg);
-                return;
-              }
-          })
+      if (obj.doc_type == true) {
+        var images = obj.doc_content.match(/\!\[image\]\(\/docimgs\/(.+?)\)/g); 
+        var bucket = config.qiniu.BUCKET;
+        if (images.length > 0) {
+          for (var i = 0; i < images.length; i++) {
+            var key = 'img/docimgs/' + images[i].slice(18, 35);
+            qiniu.deleteFile(bucket, key, function (err, ret) {
+                if (err) {
+                  restmsg.errorMsg(err);
+                  res.send(restmsg);
+                  return;
+                }
+            })
+          }
         }
       }
+      
       if (obj.level == 1) {
           var query = {
             "$or": [{
