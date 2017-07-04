@@ -25,10 +25,27 @@ var storage = multer.diskStorage({
     }
  });
 
+var storageImgs = multer.diskStorage({
+     //设置上传后文件路径，uploads文件夹会自动创建。
+    destination: function (req, file, cb) {
+      cb(null, config.docimages)
+    },
+     //给上传文件重命名，获取添加后缀名
+    filename: function (req, file, cb) {
+      var fileFormat = (file.originalname).split(".");
+      cb(null, Date.now() + "." + fileFormat[fileFormat.length - 1]);
+    }
+ });
+
 //初始化multer
 var mwMulter1 = multer({
     storage: storage
 });
+
+var mwMulter2 = multer({
+    storage: storageImgs
+});
+
 
 router.post('/portrait/:id', mwMulter1.single('file'), function(req, res, next) {
     if (!fs.existsSync(config.portrait)) {
@@ -128,6 +145,40 @@ router.get('/qiniu/:id', function(req, res, next) {
         restmsg.successMsg();
         restmsg.setResult(obj.portrait);
         res.send(restmsg);
+    })
+})
+
+router.post('/mdeditor', mwMulter2.single('file'), function (req, res, next) {
+    var restmsg = new RestMsg();
+    var file = req.file;
+    var userid = req.params.id;
+    var filename = common.fileNewName(file.originalname);
+    var updateUser = {
+        portrait: filename
+    }
+    var bucket = 'ljx-img2';
+    var key = 'img/docimgs/' + filename;
+    var token = qiniu.uptoken(bucket, key);
+
+    if (!file) {
+        restmsg.errorMsg("未上传图片或者文图片格式不正确！");
+        res.send(restmsg);
+        return;
+    }
+
+    qiniu.uploadFile(token, key, file.path, function (err, ret) {
+      if (err) {
+        restmsg.errorMsg(err);
+        res.send(restmsg);
+        return;
+      }
+      var obj = {};
+      obj.wmdImgUrl = '![image](/docimgs/' + filename + ')';
+      obj.imgName = filename.split('.')[0]; //文件名称
+
+      restmsg.successMsg();
+      restmsg.setResult(obj);
+      res.send(restmsg);
     })
 })
 
