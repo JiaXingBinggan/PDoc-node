@@ -6,6 +6,7 @@ var router = express.Router();
 var fs = require('fs');
 var multer = require('multer');
 var async = require('async');
+// var xss = require('xss'); // 引入防止XSS攻击中间件
 var common = require('../../middlewares/common');
 var qiniu = require('../../middlewares/qiniu');
 var config = require("../../config");
@@ -32,6 +33,25 @@ _privateFun.prsBO2VO2 = function(obj){
     } });
     return result;
 }
+
+// const options = {
+//   whiteList: {
+//     a: [],
+//     p: ['style'],
+//     div: ['style'],
+//     span: ['style']
+//   }
+// };
+
+// // css白名单
+// const myxss = new xss.FilterXSS({
+//   css: {
+//     whiteList: {
+//       background: true,
+//       color: true,
+//     }
+//   }
+// });
 
 // 子节点字段过滤器
 function childNodeFilter (model) {
@@ -83,7 +103,7 @@ router.route('/')
     var newNode = {
       label: label,
       desc: desc,
-      doc_content: docContent,
+      doc_content: myxss.process(docContent),
       doc_type: docType,
       owner_email: ownerEmail
     };
@@ -344,7 +364,7 @@ router.route('/:id')
     var updateNode = {
       label: updateLabel,
       desc: updateDesc,
-      doc_content: updateDoc
+      doc_content: myxss.process(updateDoc)
     }
 
     if (updateMdHtml) {
