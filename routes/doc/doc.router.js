@@ -103,7 +103,8 @@ router.route('/')
     var newNode = {
       label: label,
       desc: desc,
-      doc_content: myxss.process(docContent),
+      // doc_content: myxss.process(docContent),
+      doc_content: docContent,
       doc_type: docType,
       owner_email: ownerEmail
     };
@@ -364,7 +365,8 @@ router.route('/:id')
     var updateNode = {
       label: updateLabel,
       desc: updateDesc,
-      doc_content: myxss.process(updateDoc)
+      // doc_content: myxss.process(updateDoc)
+      doc_content: updateDoc
     }
 
     if (updateMdHtml) {
