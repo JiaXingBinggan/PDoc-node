@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Created by lijiaxing on 2017/6/28.
  */
 var express = require('express');
@@ -507,7 +507,7 @@ router.route('/:id')
       if (obj.doc_type == true) {
         var images = obj.doc_content.match(/\!\[image\]\(\/docimgs\/(.+?)\)/g); 
         var bucket = config.qiniu.BUCKET;
-        if (images.length > 0) {
+        if (images && images.length > 0) {
           for (var i = 0; i < images.length; i++) {
             var key = 'img/docimgs/' + images[i].slice(18, 35);
             qiniu.deleteFile(bucket, key, function (err, ret) {
